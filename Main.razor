@@ -1,0 +1,45 @@
+@inherits WebUIComponent;
+@inject IJSRuntime JSRuntime;
+
+
+<div class="card ">
+    <div class="card-header text-center">
+        Long Next target
+    </div>
+    <div class="card-body">
+        <div class="form-check form-switch">
+            <input class="form-check-input" type="checkbox" role="switch" id="flexSwitchCheckChecked1" @bind="Enabled">
+            <label class="form-check-label" for="flexSwitchCheckChecked1">Enable system</label>
+        </div>
+        
+        <div class="form-check form-switch">
+            <input class="form-check-input" type="checkbox" role="switch" id="flexSwitchCheckChecked" @bind="TogglePreview">
+            <label class="form-check-label" for="flexSwitchCheckChecked">Render preview</label>
+        </div>
+        
+        <div class="input-group mb-3" style="margin-top: 10px;">
+            <span class="input-group-text" id="basic-addon5">Ignore range</span>
+            <input type="text" class="form-control" aria-describedby="basic-addon5" @bind="IGNORE_DISTANCE">
+        </div>
+        
+        
+        <div class="input-group mb-3">
+            <span class="input-group-text" id="basic-addon3">Center -X</span>
+            <input type="text" class="form-control" aria-describedby="basic-addon3" @bind="_cx">
+            <span class="input-group-text" id="basic-addon4">Center -Y</span>
+            <input type="text" class="form-control" aria-describedby="basic-addon4" @bind="_cy">
+        </div>
+
+        <br/>
+        <div class="progress">
+            <div class="progress-bar bg-danger" role="progressbar" style="width: @globalPercentage%;" aria-valuenow="@globalPercentage" aria-valuemin="0" aria-valuemax="100" id="healthProgressBar">@globalPercentage %</div>
+        </div><br/>
+        <!-- <div>Window - @Window</div>
+        <div>Current Bounds - @CurrentBounds</div>
+        <div>Center - @CenterCords</div> -->
+        <img id="dynamicImage" class="img-fluid" alt="Visual representation"/>
+    </div>
+    <div class="card-footer text-body-secondary text-center">
+        Created by linqse
+    </div>
+</div>
