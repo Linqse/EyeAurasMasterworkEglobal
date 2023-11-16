@@ -28,8 +28,11 @@ public partial class Main : WebUIComponent
     {
         Disposable.Create(() => Log.Info("Disposed")).AddTo(Anchors);
 
-        Minimap.ImageSink.Where(_ => Enabled).Subscribe(x => StartGetVal(x)).AddTo(Anchors);
-        PlayerHP.ImageSink.Where(_ => Enabled).Subscribe(x => HPBar(x)).AddTo(Anchors);
+        Minimap.ImageSink.Where(_ => Enabled).Subscribe(x => 
+            Task.Run(() => StartGetVal(x))).AddTo(Anchors);
+    
+        PlayerHP.ImageSink.Where(_ => Enabled).Subscribe(x => 
+            Task.Run(() => HPBar(x))).AddTo(Anchors);
     }
 
     private bool Enabled { get; set; } = false;
@@ -49,7 +52,7 @@ public partial class Main : WebUIComponent
         sw.Start();
         await Task.Run(() => GetVal(inputImage));
         sw.Stop();
-        Log.Info($"{sw.Elapsed}");
+        Log.Info($"Full render - {sw.ElapsedMilliseconds}ms");
     }
 
     public double globalPercentage = 0;
@@ -198,14 +201,15 @@ public partial class Main : WebUIComponent
     private void GeneratePreview(Image<Bgr, byte> inputImage, Point closestPoint, Point centerCordsRelativeToInputImage,
         VectorOfVectorOfPoint contours)
     {
+        int size = 1;
         int proximityThreshold = 111;
         // Удвоим размер изображения, например, в 2 раза
-        Image<Bgr, byte> enlargedImage = inputImage.Resize(2, Emgu.CV.CvEnum.Inter.Linear);
+        Image<Bgr, byte> enlargedImage = inputImage.Resize(size, Emgu.CV.CvEnum.Inter.Linear);
 
         // Теперь отмасштабируем координаты точек для увеличенного изображения
-        closestPoint = new Point(closestPoint.X * 2, closestPoint.Y * 2);
+        closestPoint = new Point(closestPoint.X * size, closestPoint.Y * size);
         centerCordsRelativeToInputImage =
-            new Point(centerCordsRelativeToInputImage.X * 2, centerCordsRelativeToInputImage.Y * 2);
+            new Point(centerCordsRelativeToInputImage.X * size, centerCordsRelativeToInputImage.Y * size);
 
         List<Point> existingPoints = new List<Point>(); 
 
@@ -245,6 +249,8 @@ public partial class Main : WebUIComponent
 
             JSRuntime.InvokeVoidAsync("updateImage", base64ImageString);
         }
+        
+        
     }
 
     private string base64ImageString;
