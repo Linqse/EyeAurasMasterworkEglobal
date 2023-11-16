@@ -178,12 +178,12 @@ public partial class Main : WebUIComponent
 
 
         var characterCenter = new Point(windowBounds.Width / 2, (int)(windowBounds.Height * 0.53));
-        AuraTree.Aura["Character"] = characterCenter;
+        
 
         int clickX = characterCenter.X + (int)(directionX * rad);
         int clickY = characterCenter.Y + (int)(directionY * rad);
 
-        // Update AuraTree if click coordinates are valid.
+        
         if (clickX >= 0 && clickY >= 0)
         {
             SendInput.MousePosition.SourceBounds.Location = new Point(clickX, clickY);
@@ -194,17 +194,7 @@ public partial class Main : WebUIComponent
         }
     }
 
-    private bool IsAnotherPointClose(Point currentPoint, List<Point> existingPoints, int threshold)
-    {
-        foreach (var point in existingPoints)
-        {
-            if (Math.Sqrt(Math.Pow(currentPoint.X - point.X, 2) + Math.Pow(currentPoint.Y - point.Y, 2)) <= threshold)
-            {
-                return true;
-            }
-        }
-        return false;
-    }
+    
     private void GeneratePreview(Image<Bgr, byte> inputImage, Point closestPoint, Point centerCordsRelativeToInputImage,
         VectorOfVectorOfPoint contours)
     {
@@ -224,13 +214,8 @@ public partial class Main : WebUIComponent
             for (int j = 0; j < contours[i].Size; j++)
             {
                 Point pt = new Point(contours[i][j].X * 2, contours[i][j].Y * 2);
-
-                // Проверяем, нет ли другой белой точки поблизости
-                if (!IsAnotherPointClose(pt, existingPoints, proximityThreshold))
-                {
-                    existingPoints.Add(pt); // Добавляем точку в список, если рядом нет других
-                    enlargedImage.Draw(new CircleF(pt, 1), new Bgr(255, 255, 255), 2);
-                }
+                
+                
             }
         }
 
@@ -256,9 +241,11 @@ public partial class Main : WebUIComponent
         {
             enlargedImage.ToBitmap().Save(memory, System.Drawing.Imaging.ImageFormat.Jpeg);
             byte[] imageBytes = memory.ToArray();
-            string base64ImageString = "data:image/jpeg;base64," + Convert.ToBase64String(imageBytes);
+            base64ImageString = "data:image/jpeg;base64," + Convert.ToBase64String(imageBytes);
 
             JSRuntime.InvokeVoidAsync("updateImage", base64ImageString);
         }
     }
+
+    private string base64ImageString;
 }

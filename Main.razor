@@ -20,6 +20,9 @@
         <div class="input-group mb-3" style="margin-top: 10px;">
             <span class="input-group-text" id="basic-addon5">Ignore range</span>
             <input type="text" class="form-control" aria-describedby="basic-addon5" @bind="IGNORE_DISTANCE">
+            <span class="input-group-text" id="basic-addon6">Radius</span>
+            <input type="text" class="form-control" aria-describedby="basic-addon6" @bind="rad">
+            
         </div>
         
         
@@ -37,7 +40,10 @@
         <!-- <div>Window - @Window</div>
         <div>Current Bounds - @CurrentBounds</div>
         <div>Center - @CenterCords</div> -->
-        <img id="dynamicImage" class="img-fluid" alt="Visual representation"/>
+        @if (base64ImageString != null)
+        {
+            <img id="dynamicImage" class="img-fluid" alt="Visual representation"/>
+        }
     </div>
     <div class="card-footer text-body-secondary text-center">
         Created by linqse
