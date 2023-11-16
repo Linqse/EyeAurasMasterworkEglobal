@@ -103,22 +103,20 @@ public partial class Main : WebUIComponent
     {
         try
         {
-            var windowBounds = Window = Minimap.ActiveWindow.DwmWindowBounds;
-            var currentBounds = CurrentBounds = Minimap.WindowRegion.Bounds.Bounds;
-            //var centerOfMinimap = new Rectangle(windowBounds.Width - 91, 89, 1, 1);
-            var centerOfMinimap = CenterCords = new Rectangle(windowBounds.Width - _cx, _cy, 1, 1);
-            var centerRelativeToImage =
-                new Point(centerOfMinimap.X - currentBounds.X, centerOfMinimap.Y - currentBounds.Y);
+            var windowBounds = Minimap.ActiveWindow.DwmWindowBounds;
+            var currentBounds = Minimap.WindowRegion.Bounds.Bounds;
+            var centerOfMinimap = new Rectangle(windowBounds.Width - _cx, _cy, 1, 1);
+            var centerRelativeToImage = new Point(centerOfMinimap.X - currentBounds.X, centerOfMinimap.Y - currentBounds.Y);
 
             Image<Gray, byte> mask = inputImage.InRange(new Bgr(255, 255, 255), new Bgr(255, 255, 255));
 
             VectorOfVectorOfPoint contours = new VectorOfVectorOfPoint();
             Mat hierarchy = new Mat();
 
-            CvInvoke.FindContours(mask, contours, hierarchy, Emgu.CV.CvEnum.RetrType.External,
-                Emgu.CV.CvEnum.ChainApproxMethod.ChainApproxSimple);
+            CvInvoke.FindContours(mask, contours, hierarchy, Emgu.CV.CvEnum.RetrType.External, Emgu.CV.CvEnum.ChainApproxMethod.ChainApproxSimple);
 
             Point closestWhitePoint = FindClosestWhitePoint(contours, centerRelativeToImage);
+
             Point relativeToPoint = new Point(closestWhitePoint.X + currentBounds.X - windowBounds.X,
                 closestWhitePoint.Y + currentBounds.Y - windowBounds.Y);
 
@@ -139,18 +137,15 @@ public partial class Main : WebUIComponent
 
     private Point FindClosestWhitePoint(VectorOfVectorOfPoint contours, Point centerRelativeToImage)
     {
-        double minDistance = double.MaxValue;
         Point closestPoint = new Point();
+        double minDistance = double.MaxValue;
 
-        for (int i = 0; i < contours.Size; i++)
+        foreach (var contour in contours.ToArrayOfArray())
         {
-            for (int j = 0; j < contours[i].Size; j++)
+            foreach (var pt in contour)
             {
-                Point pt = contours[i][j];
                 double distance = CalculateDistance(pt, centerRelativeToImage);
-
-                if (distance >= IGNORE_DISTANCE &&
-                    distance < minDistance) // Игнорировать точки ближе IGNORE_DISTANCE пикселей к центру
+                if (distance >= IGNORE_DISTANCE && distance < minDistance)
                 {
                     minDistance = distance;
                     closestPoint = pt;
@@ -191,16 +186,7 @@ public partial class Main : WebUIComponent
         // Update AuraTree if click coordinates are valid.
         if (clickX >= 0 && clickY >= 0)
         {
-            AuraTree.Aura["Mob"] = SendInput.MousePosition.SourceBounds.Location = new Point(clickX, clickY);
-
-            if (AuraTree.Aura["Count"] == null)
-            {
-                AuraTree.Aura["Count"] = 1;
-            }
-            else
-            {
-                AuraTree.Aura["Count"] = (int)AuraTree.Aura["Count"] + 1;
-            }
+            SendInput.MousePosition.SourceBounds.Location = new Point(clickX, clickY);
         }
         else
         {
