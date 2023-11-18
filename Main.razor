@@ -1,11 +1,28 @@
+@using PoeShared.Scaffolding.WPF
 @inherits WebUIComponent;
 @inject IJSRuntime JSRuntime;
 
 
 <div class="card ">
-    <div class="card-header text-center">
-        Long Next target
+    <div class="card-header d-flex justify-content-between align-items-center">
+        <!-- Text container -->
+        <div class="mx-auto">
+            <span>Long Next target</span>
+        </div>
+    
+        <!-- Button container -->
+        <div>
+            <button type="button" class="btn btn-link" data-bs-toggle="modal" data-bs-target="#blacklistModal">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="red" class="bi bi-exclamation-square-fill" viewBox="0 0 16 16">
+                    <path d="M2 0a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V2a2 2 0 0 0-2-2H2zm6 4c.535 0 .954.462.9.995l-.35 3.507a.552.552 0 0 1-1.1 0L7.1 4.995A.905.905 0 0 1 8 4zm.002 6a1 1 0 1 1 0 2 1 1 0 0 1 0-2z"/>
+                </svg>
+            </button>
+            <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#exampleModal">
+                Info
+            </button>
+        </div>
     </div>
+
     <div class="card-body">
         <div class="form-check form-switch">
             <input class="form-check-input" type="checkbox" role="switch" id="flexSwitchCheckChecked1" @bind="Enabled">
@@ -19,9 +36,9 @@
         
         <div class="input-group mb-3" style="margin-top: 10px;">
             <span class="input-group-text" id="basic-addon5">Ignore range</span>
-            <input type="text" class="form-control" aria-describedby="basic-addon5" @bind="IGNORE_DISTANCE">
-            <span class="input-group-text" id="basic-addon6">Radius</span>
-            <input type="text" class="form-control" aria-describedby="basic-addon6" @bind="rad">
+            <input type="text" class="form-control" aria-describedby="basic-addon5" @bind="_ignoreDistance">
+            <span class="input-group-text" id="basic-addon6">Click Radius</span>
+            <input type="text" class="form-control" aria-describedby="basic-addon6" @bind="_rad">
             
         </div>
         
@@ -35,11 +52,39 @@
 
         <br/>
         <div class="progress">
-            <div class="progress-bar bg-danger" role="progressbar" style="width: @globalPercentage%;" aria-valuenow="@globalPercentage" aria-valuemin="0" aria-valuemax="100" id="healthProgressBar">@globalPercentage %</div>
+            <div class="progress-bar bg-danger" role="progressbar" style="width: @_globalPercentage%;" aria-valuenow="@_globalPercentage" aria-valuemin="0" aria-valuemax="100" id="healthProgressBar">@_globalPercentage %</div>
         </div><br/>
-        <!-- <div>Window - @Window</div>
-        <div>Current Bounds - @CurrentBounds</div>
-        <div>Center - @CenterCords</div> -->
+        
+        <div class="form-check form-switch">
+            <input class="form-check-input" type="checkbox" role="switch" id="flexSwitchCheckChecked5" @bind="Hotkey.TriggerValue">
+            <label class="form-check-label" for="flexSwitchCheckChecked5">Start fight</label>
+        </div>
+        
+        <div class="d-flex">
+            <div class="form-check form-switch me-3">
+                <input class="form-check-input" type="checkbox" role="switch" id="flexSwitchCheckChecked6" @bind="Spoil">
+                <label class="form-check-label" for="flexSwitchCheckChecked6">Im spoil</label>
+            </div>
+            <div class="form-check form-switch me-3">
+                <input class="form-check-input" type="checkbox" role="switch" id="flexSwitchCheckChecked7" @bind="EnableCoctail">
+                <label class="form-check-label" for="flexSwitchCheckChecked7">Coctail</label>
+            </div>
+            <div class="form-check form-switch">
+                <input class="form-check-input" type="checkbox" role="switch" id="flexSwitchCheckChecked8" @bind="NoPickup">
+                <label class="form-check-label" for="flexSwitchCheckChecked8">No Pickup</label>
+            </div>
+        </div>
+
+        
+        <ul class="list-group list-group-flush text-center">
+            <li class="list-group-item">@Status</li>
+            <li class="list-group-item">@Target</li>
+            
+            
+        </ul>
+        <button @onclick="CheckTarget">Check</button>
+        
+        
         @if (TogglePreview)
         {
             <img id="dynamicImage" class="img-fluid" alt="Visual representation"/>
@@ -48,4 +93,106 @@
     <div class="card-footer text-body-secondary text-center">
         Created by linqse
     </div>
+    
+    <!-- Новое модальное окно -->
+    <div class="modal fade" id="blacklistModal" tabindex="-1" aria-labelledby="blacklistModalLabel" aria-hidden="true">
+      <div class="modal-dialog">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h5 class="modal-title" id="blacklistModalLabel">Black List</h5>
+            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+          </div>
+          <div class="modal-body">
+            
+            <div class="input-group mb-3">
+              <input type="text" class="form-control" @bind="newItem" placeholder="Новый элемент" />
+                          <button class="btn btn-success" @onclick="AddItem">Добавить</button>
+                          
+            </div>
+    
+            <ul class="list-group mt-3">
+                @foreach (var item in BlackList)
+                {
+                    <li class="list-group-item d-flex justify-content-between align-items-center">
+                        @item
+                        <button class="btn btn-danger btn-sm" @onclick="@(() => RemoveItem(item))">Удалить</button>
+                    </li>
+                }
+            </ul>
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Закрыть</button>
+          </div>
+        </div>
+      </div>
+    </div>
+    
+    <!-- Modal -->
+    <div class="modal fade" id="exampleModal" tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h1 class="modal-title fs-5" id="exampleModalLabel">Info syka</h1>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <table class="table table-dark table-striped">
+                        <thead>
+                        <tr>
+                            <th scope="col">Key</th>
+                            <th scope="col">Action</th>
+                        </tr>
+                        </thead>
+                        <tbody>
+                        <tr>
+                            <th scope="row">1</th>
+                            <td>Attack</td>
+                        </tr>
+                        <tr>
+                            <th scope="row">2</th>
+                            <td>Spoil</td>
+                        </tr>
+                        <tr>
+                            <th scope="row">3</th>
+                            <td>Nexttarget</td>
+                        </tr>
+                        <tr>
+                            <th scope="row">4</th>
+                            <td>Pickup</td>
+                        </tr>
+                        <tr>
+                            <th scope="row">5</th>
+                            <td>Sweep</td>
+                        </tr>
+                        <tr>
+                            <th scope="row">8</th>
+                            <td>Coctail</td>
+                        </tr>
+                        </tbody>
+                    </table>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                </div>
+            </div>
+        </div>
+    </div>
 </div>
+
+@code {
+    private List<string> BlackList = new List<string> { "Chest", "Ranger" };
+    private string newItem = "";
+    private void AddItem()
+    {
+        if (!string.IsNullOrWhiteSpace(newItem))
+        {
+            BlackList.Add(newItem);
+            newItem = "";
+        }
+    }
+
+    private void RemoveItem(string item)
+    {
+        BlackList.Remove(item);
+    }
+}

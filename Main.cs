@@ -7,22 +7,59 @@ using Emgu.CV.Structure;
 using Emgu.CV.Util;
 using System.Drawing;
 using System.Collections.Generic;
+using EyeAuras.OpenCVAuras.Scaffolding;
+using EyeAuras.Roxy.Shared.Actions.SendInput;
+using PoeShared.UI;
+
 namespace EyeAuras.Web.Repl.Component;
 
 public partial class Main : WebUIComponent
 {
+    [Dependency] public ISendInputController SendInputController { get; init; }
+    
+    [Dependency] public IHotkeyConverter HotkeyConverter { get; init; }
     public Main()
     {
     }
-
+    
+    private static readonly SendInputArgs DefaultSendInputArgs = new()
+    {
+        MinDelay = TimeSpan.FromMilliseconds(25),
+        MaxDelay = TimeSpan.FromMilliseconds(35),
+        InputSimulatorId = "TetherScriptFree",
+        InputEventType = InputEventType.KeyPress
+    };
     private IImageSearchTrigger Minimap =>
-        AuraTree.GetAuraByPath(@".\Minimap").Triggers.Items.OfType<IImageSearchTrigger>().First();
+        AuraTree.GetAuraByPath(@".\Search\Minimap").Triggers.Items.OfType<IImageSearchTrigger>().First();
+    
 
-    private ISendInputAction SendInput =>
-        AuraTree.GetAuraByPath(@".\ClickMove").WhileActiveActions.Items.OfType<ISendInputAction>().First();
+    private IImageSearchTrigger PlayerHp =>
+        AuraTree.GetAuraByPath(@".\Search\PlayerHP").Triggers.Items.OfType<IImageSearchTrigger>().First();
 
-    private IImageSearchTrigger PlayerHP =>
-        AuraTree.GetAuraByPath(@".\PlayerHP").Triggers.Items.OfType<IImageSearchTrigger>().First();
+    private IHotkeyIsActiveTrigger Hotkey =>
+        AuraTree.GetAuraByPath(@".\StartKey").Triggers.Items.OfType<IHotkeyIsActiveTrigger>().First();
+
+    private IImageSearchTrigger TargetHp => AuraTree.GetAuraByPath(@".\Search\TargetHP").Triggers.Items
+        .OfType<IImageSearchTrigger>().First();
+    private IImageSearchTrigger Spoiled => AuraTree.GetAuraByPath(@".\Search\Spoiled").Triggers.Items
+        .OfType<IImageSearchTrigger>().First();
+
+    private IImageSearchTrigger Coctail => AuraTree.GetAuraByPath(@".\Search\Coctail").Triggers.Items
+        .OfType<IImageSearchTrigger>().First();
+
+    private ITextSearchTrigger IgnorTarget => AuraTree.GetAuraByPath(@".\Search\IgnorTarget").Triggers.Items
+        .OfType<ITextSearchTrigger>().First();
+    
+
+    private IDefaultTrigger Attack =>
+        AuraTree.GetAuraByPath(@".\Attack").Triggers.Items.OfType<IDefaultTrigger>().First();
+
+    private void StartParam()
+    {
+        var dwm = Minimap.ActiveWindow.DwmWindowBounds;
+        AuraTree.Aura["TargetHP"] = new Rectangle(dwm.Width/2-150, 0, 100,70);
+        AuraTree.Aura["IgnorTarget"] = new Rectangle(dwm.Width/2-50, 0, 300,70);
+    }
 
     protected override async Task HandleAfterFirstRender()
     {
@@ -31,33 +68,204 @@ public partial class Main : WebUIComponent
         Minimap.ImageSink.Where(_ => Enabled).Subscribe(x => 
             Task.Run(() => StartGetVal(x))).AddTo(Anchors);
     
-        PlayerHP.ImageSink.Where(_ => Enabled).Subscribe(x => 
-            Task.Run(() => HPBar(x))).AddTo(Anchors);
+        PlayerHp.ImageSink.Where(_ => Enabled).Subscribe(x => 
+            Task.Run(() => HpBar(x))).AddTo(Anchors);
+        TargetHp.ImageSink.Where(_ => Enabled && Hotkey.IsActive == true).Subscribe(x => 
+            Task.Run(() => CheckTarget())).AddTo(Anchors);
+        
+        TargetHp.WhenAnyValue(x => x.IsActive)
+            .Where(x => x.HasValue && x.Value && Hotkey.IsActive == true)
+            .Subscribe(x => Task.Run(()=>Fight()))
+            .AddTo(Anchors);
+        TargetHp.WhenAnyValue(x => x.IsActive)
+            .Where(x => x.HasValue && !x.Value && Hotkey.IsActive == true)
+            .Subscribe(x => Task.Run(()=>SearchTarget()))
+            .AddTo(Anchors);
+        Hotkey.WhenAnyValue(x => x.IsActive)
+            .Where(x => x.HasValue && x.Value)
+            .Subscribe(x => Task.Run(() =>
+            {
+                 StartFight();
+                 
+            }))
+            .AddTo(Anchors);
+        Coctail.WhenAnyValue(x => x.IsActive)
+            .Where(x => x.HasValue && !x.Value && EnableCoctail && Hotkey.IsActive == true)
+            .Subscribe(_ => EatCoctail())
+            .AddTo(Anchors);
+        /*IgnorTarget.ImageSink
+            .Where(_ => Hotkey.IsActive == true && BlackList != null)
+            .Subscribe(x => CheckBlackList())
+            .AddTo(Anchors);*/
+
+        StartParam();
     }
 
-    private bool Enabled { get; set; } = false;
-    private string MyImageString { get; set; } = "data:image/jpeg;base64,YourBase64String";
+    
+    
+    private bool Enabled { get; set; }
     private bool TogglePreview { get; set; }
+    private bool Spoil { get; set; }
+    private string Status { get; set; }
+    private bool EnableCoctail { get; set; }
+    private bool NoPickup { get; set; }
+    private Point MouseClickDirect;
+    //private bool IgnorCurrentTarget { get; set; }
 
-    private Rectangle Window { get; set; }
-    private Rectangle CurrentBounds { get; set; }
-    private Rectangle CenterCords { get; set; }
+    private async Task StartFight()
+    {
+        await Task.Delay(100);
 
-    private readonly object _getValLock = new object();
-    private Task _currentGetValTask;
+        if (Target)
+        {
+            await Task.Delay(200);
+            await Fight();
 
+        }
+        else
+        {
+            await SearchTarget();
+        }
+    }
+
+    private bool Target { get; set; } = true;
+    private async Task CheckTarget()
+    {
+        bool checkBlack = await CheckBlackList();
+        Target = TargetHp.IsActive == true && !checkBlack;
+        
+    }
+
+    private async Task<bool> CheckBlackList()
+    {
+        if (IgnorTarget?.TextEvaluator?.Text == null || BlackList == null)
+        {
+            return false;
+        }
+        await IgnorTarget.FetchNextResult();
+        var text = IgnorTarget.TextEvaluator.Text.ToLower();
+        return BlackList.Any(item => text.Contains(item.ToLower()));
+    }
+
+    private bool _waitForSearch = true;
+    private async Task Fight()
+    {
+        while (Hotkey.IsActive == true && !Target)
+        {
+            await Task.Delay(50);
+        }
+        var spoiled = false;
+        Status = Spoil ? "Start spoil" : "Start fight with mobs";
+        if (Spoil)
+        {
+            while (Hotkey.IsActive == true && Spoiled.IsActive == false && Target)
+            {
+                await SendKey("2");
+                await Task.Delay(350);
+            }
+
+            spoiled = true;
+        }
+
+        Status = "Start fight with mobs";
+        Attack.TriggerValue = true;
+        try
+        {
+            while (Target && Hotkey.IsActive == true)
+            {
+                await Task.Delay(100);
+            }
+        }
+        finally
+        {
+            Attack.TriggerValue = false;
+        }
+
+        for (int i = 0; i < 5; i++)
+        {
+            if (spoiled)
+            {
+                await SendKey("5");
+            }
+
+            if (!NoPickup)
+            {
+                await SendKey("4");
+                await Task.Delay(100);
+            }
+        }
+
+        if (!Spoil)
+        {
+            await SendKey("Esc");
+        }
+
+        await Task.Delay(100);
+        Log.Info("Stop attack");
+    }
+    
+    
+     
+    private const int SpoilDelay = 2500;
+    private const int NonSpoilDelay = 2000;
+    private async Task SearchTarget()
+    {
+        if (!NoPickup)
+        {
+            await Task.Delay(Spoil ? SpoilDelay : NonSpoilDelay);
+        }
+
+        Log.Info("Start search");
+        
+        Status = "Searching target";
+        
+        
+        
+        var sw = new Stopwatch();
+        sw.Start();
+        while (!Target && Hotkey.IsActive == true)
+        {
+            await SendKey("3");
+            if (sw.ElapsedMilliseconds > 500 && Minimap.IsActive == true && Enabled)
+            {
+                Task.Run(() =>MouseClickToFollow());
+            }
+            await Task.Delay(200);
+
+        }
+        sw.Stop();
+    }
+
+    private async Task MouseClickToFollow()
+    {
+        while (!Target  && Hotkey.IsActive == true)
+        {
+            
+            if (Minimap.IsActive == true && Enabled)
+            {
+                await SendKey("MouseLeft",MouseClickDirect);
+            }
+            await Task.Delay(20);
+        }
+    }
+
+    private async Task EatCoctail()
+    {
+        await SendKey("8");
+        await SendKey("8");
+    }
     private async Task StartGetVal(Image<Bgr, byte> inputImage)
     {
         var sw = new Stopwatch();
         sw.Start();
         await Task.Run(() => GetVal(inputImage));
         sw.Stop();
-        Log.Info($"Full render - {sw.ElapsedMilliseconds}ms");
+        //Log.Info($"Full render - {sw.ElapsedMilliseconds}ms");
     }
 
-    public double globalPercentage = 0;
+    private double _globalPercentage = 0;
 
-    private async Task HPBar(Image<Bgr, byte> inputImage)
+    private async Task HpBar(Image<Bgr, byte> inputImage)
     {
         // Конвертируем изображение в черно-белое для удобства
         var grayImage = inputImage.Convert<Gray, byte>();
@@ -87,15 +295,15 @@ public partial class Main : WebUIComponent
         if (firstWhitePixel != -1 && lastWhitePixel != -1)
         {
             int widthOfWhitePixels = lastWhitePixel - firstWhitePixel + 1;
-            globalPercentage = (double)widthOfWhitePixels / 150 * 100;
+            _globalPercentage = (double)widthOfWhitePixels / 150 * 100;
 
             // Ограничиваем значение до 100%
-            globalPercentage = Math.Min(globalPercentage, 100);
-            await JSRuntime.InvokeVoidAsync("updateProgressBar", globalPercentage);
+            _globalPercentage = Math.Min(_globalPercentage, 100);
+            await JSRuntime.InvokeVoidAsync("updateProgressBar", _globalPercentage);
         }
         else
         {
-            globalPercentage = 0;
+            _globalPercentage = 0;
         }
     }
 
@@ -136,7 +344,7 @@ public partial class Main : WebUIComponent
         }
     }
 
-    private int IGNORE_DISTANCE = 15; // Глобальная переменная для задания расстояния игнорирования
+    private int _ignoreDistance = 15; // Глобальная переменная для задания расстояния игнорирования
 
     private Point FindClosestWhitePoint(VectorOfVectorOfPoint contours, Point centerRelativeToImage)
     {
@@ -148,7 +356,7 @@ public partial class Main : WebUIComponent
             foreach (var pt in contour)
             {
                 double distance = CalculateDistance(pt, centerRelativeToImage);
-                if (distance >= IGNORE_DISTANCE && distance < minDistance)
+                if (distance >= _ignoreDistance && distance < minDistance)
                 {
                     minDistance = distance;
                     closestPoint = pt;
@@ -167,7 +375,7 @@ public partial class Main : WebUIComponent
     }
 
 
-    private int rad = 250;
+    private int _rad = 250;
 
     private void ProcessDirectionAndClick(Rectangle windowBounds, Point centerRelativeToImage, Point closestPoint)
     {
@@ -183,13 +391,13 @@ public partial class Main : WebUIComponent
         var characterCenter = new Point(windowBounds.Width / 2, (int)(windowBounds.Height * 0.53));
         
 
-        int clickX = characterCenter.X + (int)(directionX * rad);
-        int clickY = characterCenter.Y + (int)(directionY * rad);
+        int clickX = characterCenter.X + (int)(directionX * _rad);
+        int clickY = characterCenter.Y + (int)(directionY * _rad);
 
         
         if (clickX >= 0 && clickY >= 0)
         {
-            SendInput.MousePosition.SourceBounds.Location = new Point(clickX, clickY);
+            MouseClickDirect = new Point(clickX, clickY);
         }
         else
         {
@@ -245,13 +453,53 @@ public partial class Main : WebUIComponent
         {
             enlargedImage.ToBitmap().Save(memory, System.Drawing.Imaging.ImageFormat.Jpeg);
             byte[] imageBytes = memory.ToArray();
-            base64ImageString = "data:image/jpeg;base64," + Convert.ToBase64String(imageBytes);
+            var base64ImageString = "data:image/jpeg;base64," + Convert.ToBase64String(imageBytes);
 
             JSRuntime.InvokeVoidAsync("updateImage", base64ImageString);
         }
         
         
     }
+    
+    private async Task SendKey(string key, Point? point = null)
+    {
+        try
+        {
+            var activeWindow = TargetHp.ActiveWindow;
+            if (activeWindow == null)
+            {
+                Log.Info("Window is null, break Send Input");
+                return;
+            }
 
-    private string base64ImageString;
+            var hotkey = HotkeyConverter.ConvertFromString(key);
+
+            if (point == null)
+            {
+                await SendInputController.Send(DefaultSendInputArgs with
+                {
+                    Window = activeWindow,
+                    Gesture = hotkey,
+                }, CancellationToken.None);
+            }
+            else
+            {
+                await SendInputController.Send(DefaultSendInputArgs with
+                {
+                    MouseLocation = point.Value,
+                    Window = activeWindow,
+                    Gesture = hotkey,
+                }, CancellationToken.None);
+            }
+        }
+        catch
+        {
+            Log.Info("Problem with input");
+        }
+
+
+
+    }
+
+    
 }
