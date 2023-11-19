@@ -51,8 +51,18 @@
         </div>
 
         <br/>
-        <div class="progress">
+        <!-- <div class="progress">
             <div class="progress-bar bg-danger" role="progressbar" style="width: @_globalPercentage%;" aria-valuenow="@_globalPercentage" aria-valuemin="0" aria-valuemax="100" id="healthProgressBar">@_globalPercentage %</div>
+        </div><br/> -->
+        <div class="progress">
+            <div class="progress-bar bg-danger" role="progressbar" 
+                 style="width: @Track(x => _globalPercentage)%;" 
+                 aria-valuenow="@Track(x => _globalPercentage)" 
+                 aria-valuemin="0" 
+                 aria-valuemax="100" 
+                 id="healthProgressBar">
+                 @Track(x => $"HP {_globalPercentage} %")
+            </div>
         </div><br/>
         
         <div class="form-check form-switch">
@@ -77,12 +87,12 @@
 
         
         <ul class="list-group list-group-flush text-center">
-            <li class="list-group-item">@Status</li>
-            <li class="list-group-item">@Target</li>
+            <li class="list-group-item" style="color: greenyellow">@Status</li>
+            <li class="list-group-item">Can attack target - @Target</li>
             
             
         </ul>
-        <button @onclick="CheckTarget">Check</button>
+        
         
         
         @if (TogglePreview)

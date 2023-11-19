@@ -7,6 +7,7 @@ using Emgu.CV.Structure;
 using Emgu.CV.Util;
 using System.Drawing;
 using System.Collections.Generic;
+using System.Reactive;
 using EyeAuras.OpenCVAuras.Scaffolding;
 using EyeAuras.Roxy.Shared.Actions.SendInput;
 using PoeShared.UI;
@@ -32,7 +33,7 @@ public partial class Main : WebUIComponent
     private IImageSearchTrigger Minimap =>
         AuraTree.GetAuraByPath(@".\Search\Minimap").Triggers.Items.OfType<IImageSearchTrigger>().First();
     
-
+  
     private IImageSearchTrigger PlayerHp =>
         AuraTree.GetAuraByPath(@".\Search\PlayerHP").Triggers.Items.OfType<IImageSearchTrigger>().First();
 
@@ -56,9 +57,16 @@ public partial class Main : WebUIComponent
 
     private void StartParam()
     {
-        var dwm = Minimap.ActiveWindow.DwmWindowBounds;
-        AuraTree.Aura["TargetHP"] = new Rectangle(dwm.Width/2-150, 0, 100,70);
-        AuraTree.Aura["IgnorTarget"] = new Rectangle(dwm.Width/2-50, 0, 300,70);
+        try
+        {
+            var dwm = Minimap.ActiveWindow.DwmWindowBounds;
+            AuraTree.Aura["TargetHP"] = new Rectangle(dwm.Width / 2 - 250, 0, 100, 70);
+            AuraTree.Aura["IgnorTarget"] = new Rectangle(dwm.Width / 2 - 50, 0, 300, 70);
+        }
+        catch
+        {
+            Log.Info("NO WINDOW ALO");
+        }
     }
 
     protected override async Task HandleAfterFirstRender()
@@ -70,33 +78,40 @@ public partial class Main : WebUIComponent
     
         PlayerHp.ImageSink.Where(_ => Enabled).Subscribe(x => 
             Task.Run(() => HpBar(x))).AddTo(Anchors);
-        TargetHp.ImageSink.Where(_ => Enabled && Hotkey.IsActive == true).Subscribe(x => 
+        TargetHp.ImageSink.Where(_ => Enabled).Subscribe(x => 
             Task.Run(() => CheckTarget())).AddTo(Anchors);
         
-        TargetHp.WhenAnyValue(x => x.IsActive)
+        /*TargetHp.WhenAnyValue(x => x.IsActive)
             .Where(x => x.HasValue && x.Value && Hotkey.IsActive == true)
-            .Subscribe(x => Task.Run(()=>Fight()))
-            .AddTo(Anchors);
+            .Subscribe(x => Fight())
+            .AddTo(Anchors);*/
         TargetHp.WhenAnyValue(x => x.IsActive)
             .Where(x => x.HasValue && !x.Value && Hotkey.IsActive == true)
-            .Subscribe(x => Task.Run(()=>SearchTarget()))
+            .SelectAsync(async _ =>
+            {
+                await SearchTarget();
+                return Unit.Default; 
+            })
+            .Subscribe()
             .AddTo(Anchors);
         Hotkey.WhenAnyValue(x => x.IsActive)
             .Where(x => x.HasValue && x.Value)
             .Subscribe(x => Task.Run(() =>
             {
-                 StartFight();
-                 
+                SearchTarget();
+
             }))
             .AddTo(Anchors);
         Coctail.WhenAnyValue(x => x.IsActive)
             .Where(x => x.HasValue && !x.Value && EnableCoctail && Hotkey.IsActive == true)
             .Subscribe(_ => EatCoctail())
             .AddTo(Anchors);
-        /*IgnorTarget.ImageSink
-            .Where(_ => Hotkey.IsActive == true && BlackList != null)
-            .Subscribe(x => CheckBlackList())
-            .AddTo(Anchors);*/
+
+        this.WhenAnyValue(x => x.Target)
+            .Where(targetValue => targetValue && Hotkey.IsActive == true)
+            .Subscribe(_ => Fight())
+            .AddTo(Anchors);
+        
 
         StartParam();
     }
@@ -109,10 +124,16 @@ public partial class Main : WebUIComponent
     private string Status { get; set; }
     private bool EnableCoctail { get; set; }
     private bool NoPickup { get; set; }
+    
     private Point MouseClickDirect;
-    //private bool IgnorCurrentTarget { get; set; }
+    private bool _target;
+    private bool Target
+    {
+        get => _target;
+        set => RaiseAndSetIfChanged(ref _target, value);
+    }
 
-    private async Task StartFight()
+    /*private async Task StartFight()
     {
         await Task.Delay(100);
 
@@ -126,28 +147,11 @@ public partial class Main : WebUIComponent
         {
             await SearchTarget();
         }
-    }
+    }*/
 
-    private bool Target { get; set; } = true;
-    private async Task CheckTarget()
-    {
-        bool checkBlack = await CheckBlackList();
-        Target = TargetHp.IsActive == true && !checkBlack;
-        
-    }
+    
 
-    private async Task<bool> CheckBlackList()
-    {
-        if (IgnorTarget?.TextEvaluator?.Text == null || BlackList == null)
-        {
-            return false;
-        }
-        await IgnorTarget.FetchNextResult();
-        var text = IgnorTarget.TextEvaluator.Text.ToLower();
-        return BlackList.Any(item => text.Contains(item.ToLower()));
-    }
-
-    private bool _waitForSearch = true;
+    
     private async Task Fight()
     {
         while (Hotkey.IsActive == true && !Target)
@@ -210,10 +214,9 @@ public partial class Main : WebUIComponent
     private const int NonSpoilDelay = 2000;
     private async Task SearchTarget()
     {
-        if (!NoPickup)
-        {
-            await Task.Delay(Spoil ? SpoilDelay : NonSpoilDelay);
-        }
+        
+        await Task.Delay(Spoil ? SpoilDelay : NonSpoilDelay);
+        
 
         Log.Info("Start search");
         
@@ -223,17 +226,21 @@ public partial class Main : WebUIComponent
         
         var sw = new Stopwatch();
         sw.Start();
+        
+        bool mouseClick = false;
         while (!Target && Hotkey.IsActive == true)
         {
             await SendKey("3");
-            if (sw.ElapsedMilliseconds > 500 && Minimap.IsActive == true && Enabled)
+            if (sw.ElapsedMilliseconds > 500 && Minimap.IsActive == true && Enabled && !mouseClick)
             {
                 Task.Run(() =>MouseClickToFollow());
+                mouseClick = true;
             }
             await Task.Delay(200);
 
         }
         sw.Stop();
+        Status = "Searching exit";
     }
 
     private async Task MouseClickToFollow()
@@ -248,7 +255,36 @@ public partial class Main : WebUIComponent
             await Task.Delay(20);
         }
     }
+    
+    
+    //
+    //  НЕ РАЗЪЕБЫВАЕТ
+    //  НЕ РАЗЪЕБЫВАЕТ
+    //  НЕ РАЗЪЕБЫВАЕТ
+    //  НЕ РАЗЪЕБЫВАЕТ
+    
+    
+    
+    private async Task CheckTarget()
+    {
+        bool checkBlack = await CheckBlackList();
+        Target = TargetHp.IsActive == true && !checkBlack;
+        
+    }
 
+    private async Task<bool> CheckBlackList()
+    {
+        if (IgnorTarget?.TextEvaluator?.Text == null || BlackList == null)
+        {
+            return false;
+        }
+        await IgnorTarget.FetchNextResult();
+        var text = IgnorTarget.TextEvaluator.Text.ToLower();
+        return BlackList.Any(item => text.Contains(item.ToLower()));
+    }
+    
+    
+    
     private async Task EatCoctail()
     {
         await SendKey("8");
@@ -256,10 +292,7 @@ public partial class Main : WebUIComponent
     }
     private async Task StartGetVal(Image<Bgr, byte> inputImage)
     {
-        var sw = new Stopwatch();
-        sw.Start();
         await Task.Run(() => GetVal(inputImage));
-        sw.Stop();
         //Log.Info($"Full render - {sw.ElapsedMilliseconds}ms");
     }
 
@@ -267,6 +300,10 @@ public partial class Main : WebUIComponent
 
     private async Task HpBar(Image<Bgr, byte> inputImage)
     {
+        if (inputImage == null)
+        {
+            return;
+        }
         // Конвертируем изображение в черно-белое для удобства
         var grayImage = inputImage.Convert<Gray, byte>();
 
@@ -345,6 +382,7 @@ public partial class Main : WebUIComponent
     }
 
     private int _ignoreDistance = 15; // Глобальная переменная для задания расстояния игнорирования
+    private Dictionary<Rectangle, DateTime> _ignoredAreas = new Dictionary<Rectangle, DateTime>();
 
     private Point FindClosestWhitePoint(VectorOfVectorOfPoint contours, Point centerRelativeToImage)
     {
@@ -355,6 +393,11 @@ public partial class Main : WebUIComponent
         {
             foreach (var pt in contour)
             {
+                /*if (IsPointIgnored(pt))
+                {
+                    continue;
+                }*/
+
                 double distance = CalculateDistance(pt, centerRelativeToImage);
                 if (distance >= _ignoreDistance && distance < minDistance)
                 {
@@ -364,9 +407,20 @@ public partial class Main : WebUIComponent
             }
         }
 
+        // Добавление логики для игнорирования точек
+        // Пример, нужно модифицировать в соответствии с вашей логикой
+        /*if (TargetHp.IsActive == true && !Target)
+        {
+            Rectangle ignoreArea = new Rectangle(closestPoint.X - 15, closestPoint.Y - 15, 30, 30);
+            _ignoredAreas[ignoreArea] = DateTime.Now.AddSeconds(20); // Игнорировать на 20 секунд
+        }*/
+
         return closestPoint;
     }
-
+    /*private bool IsPointIgnored(Point pt)
+    {
+        return _ignoredAreas.Any(kv => kv.Key.Contains(pt) && DateTime.Now < kv.Value);
+    }*/
     private double CalculateDistance(Point p1, Point p2)
     {
         double dx = p1.X - p2.X;
@@ -430,25 +484,44 @@ public partial class Main : WebUIComponent
                 
             }
         }
-
-        enlargedImage.Draw(new CircleF(closestPoint, 2), new Bgr(0, 0, 255), 2);
+        
         enlargedImage.Draw(
             new CircleF(new PointF(centerCordsRelativeToInputImage.X, centerCordsRelativeToInputImage.Y), 2),
             new Bgr(0, 255, 0), 2);
+        if (closestPoint != default)
+        {
+            enlargedImage.Draw(new CircleF(closestPoint, 2), new Bgr(0, 0, 255), 2);
+            
 
-        // Рассчитываем координаты для стрелки с отступом
-        Point start = centerCordsRelativeToInputImage;
-        Point end = closestPoint;
-        double angle = Math.Atan2(end.Y - start.Y, end.X - start.X);
-        start.X += (int)(5 * Math.Cos(angle));
-        start.Y += (int)(5 * Math.Sin(angle));
-        end.X -= (int)(5 * Math.Cos(angle));
-        end.Y -= (int)(5 * Math.Sin(angle));
+            // Рассчитываем координаты для стрелки с отступом
+            Point start = centerCordsRelativeToInputImage;
+            Point end = closestPoint;
+            double angle = Math.Atan2(end.Y - start.Y, end.X - start.X);
+            start.X += (int)(5 * Math.Cos(angle));
+            start.Y += (int)(5 * Math.Sin(angle));
+            end.X -= (int)(5 * Math.Cos(angle));
+            end.Y -= (int)(5 * Math.Sin(angle));
 
-        // Рисование стрелки
-        MCvScalar arrowColor = new Bgr(0, 0, 255).MCvScalar; // Цвет стрелки (красный)
-        CvInvoke.ArrowedLine(enlargedImage, start, end, arrowColor, 2, Emgu.CV.CvEnum.LineType.AntiAlias);
+        
+            // Рисование стрелки
+            MCvScalar arrowColor = new Bgr(0, 0, 255).MCvScalar; // Цвет стрелки (красный)
+            CvInvoke.ArrowedLine(enlargedImage, start, end, arrowColor, 2, Emgu.CV.CvEnum.LineType.AntiAlias);
+        }
 
+        /*foreach (var area in _ignoredAreas.Keys)
+        {
+            if (DateTime.Now < _ignoredAreas[area])
+            {
+                Rectangle scaledArea = new Rectangle(
+                    (area.X - centerCordsRelativeToInputImage.X / size) * size + centerCordsRelativeToInputImage.X,
+                    (area.Y - centerCordsRelativeToInputImage.Y / size) * size + centerCordsRelativeToInputImage.Y,
+                    area.Width * size,
+                    area.Height * size
+                );
+
+                CvInvoke.Rectangle(enlargedImage, scaledArea, new Bgr(Color.Yellow).MCvScalar, -1); // Закрашивание зоны
+            }
+        }*/
         using (MemoryStream memory = new MemoryStream())
         {
             enlargedImage.ToBitmap().Save(memory, System.Drawing.Imaging.ImageFormat.Jpeg);
@@ -496,9 +569,6 @@ public partial class Main : WebUIComponent
         {
             Log.Info("Problem with input");
         }
-
-
-
     }
 
     
