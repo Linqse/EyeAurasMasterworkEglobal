@@ -13,43 +13,95 @@
         <!-- Button container -->
         <div>
             <button type="button" class="btn btn-link" data-bs-toggle="modal" data-bs-target="#blacklistModal">
-                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="red" class="bi bi-exclamation-square-fill" viewBox="0 0 16 16">
-                    <path d="M2 0a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V2a2 2 0 0 0-2-2H2zm6 4c.535 0 .954.462.9.995l-.35 3.507a.552.552 0 0 1-1.1 0L7.1 4.995A.905.905 0 0 1 8 4zm.002 6a1 1 0 1 1 0 2 1 1 0 0 1 0-2z"/>
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="red" class="bi bi-card-checklist" viewBox="0 0 16 16">
+                  <path d="M14.5 3a.5.5 0 0 1 .5.5v9a.5.5 0 0 1-.5.5h-13a.5.5 0 0 1-.5-.5v-9a.5.5 0 0 1 .5-.5zm-13-1A1.5 1.5 0 0 0 0 3.5v9A1.5 1.5 0 0 0 1.5 14h13a1.5 1.5 0 0 0 1.5-1.5v-9A1.5 1.5 0 0 0 14.5 2z"/>
+                  <path d="M7 5.5a.5.5 0 0 1 .5-.5h5a.5.5 0 0 1 0 1h-5a.5.5 0 0 1-.5-.5m-1.496-.854a.5.5 0 0 1 0 .708l-1.5 1.5a.5.5 0 0 1-.708 0l-.5-.5a.5.5 0 1 1 .708-.708l.146.147 1.146-1.147a.5.5 0 0 1 .708 0M7 9.5a.5.5 0 0 1 .5-.5h5a.5.5 0 0 1 0 1h-5a.5.5 0 0 1-.5-.5m-1.496-.854a.5.5 0 0 1 0 .708l-1.5 1.5a.5.5 0 0 1-.708 0l-.5-.5a.5.5 0 0 1 .708-.708l.146.147 1.146-1.147a.5.5 0 0 1 .708 0"/>
                 </svg>
             </button>
-            <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#exampleModal">
-                Info
+            
+            
+            <button id="streamButton" type="button" class="btn btn-link" data-bs-toggle="modal" data-bs-target="#VDOMoal">
+                <svg id="streamIcon" xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="limegreen" class="bi bi-camera-video-fill" viewBox="0 0 16 16">
+                    <path fill-rule="evenodd" d="M0 5a2 2 0 0 1 2-2h7.5a2 2 0 0 1 1.983 1.738l3.11-1.382A1 1 0 0 1 16 4.269v7.462a1 1 0 0 1-1.406.913l-3.111-1.382A2 2 0 0 1 9.5 13H2a2 2 0 0 1-2-2z"/>
+                </svg>
             </button>
+            
+            <button type="button" class="btn btn-link" data-bs-toggle="modal" data-bs-target="#exampleModal">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="#c3c7c4" class="bi bi-keyboard-fill" viewBox="0 0 16 16">
+                    <path d="M0 6a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2zm13 .25v.5c0 .138.112.25.25.25h.5a.25.25 0 0 0 .25-.25v-.5a.25.25 0 0 0-.25-.25h-.5a.25.25 0 0 0-.25.25M2.25 8a.25.25 0 0 0-.25.25v.5c0 .138.112.25.25.25h.5A.25.25 0 0 0 3 8.75v-.5A.25.25 0 0 0 2.75 8zM4 8.25v.5c0 .138.112.25.25.25h.5A.25.25 0 0 0 5 8.75v-.5A.25.25 0 0 0 4.75 8h-.5a.25.25 0 0 0-.25.25M6.25 8a.25.25 0 0 0-.25.25v.5c0 .138.112.25.25.25h.5A.25.25 0 0 0 7 8.75v-.5A.25.25 0 0 0 6.75 8zM8 8.25v.5c0 .138.112.25.25.25h.5A.25.25 0 0 0 9 8.75v-.5A.25.25 0 0 0 8.75 8h-.5a.25.25 0 0 0-.25.25M13.25 8a.25.25 0 0 0-.25.25v.5c0 .138.112.25.25.25h.5a.25.25 0 0 0 .25-.25v-.5a.25.25 0 0 0-.25-.25zm0 2a.25.25 0 0 0-.25.25v.5c0 .138.112.25.25.25h.5a.25.25 0 0 0 .25-.25v-.5a.25.25 0 0 0-.25-.25zm-3-2a.25.25 0 0 0-.25.25v.5c0 .138.112.25.25.25h1.5a.25.25 0 0 0 .25-.25v-.5a.25.25 0 0 0-.25-.25zm.75 2.25v.5c0 .138.112.25.25.25h.5a.25.25 0 0 0 .25-.25v-.5a.25.25 0 0 0-.25-.25h-.5a.25.25 0 0 0-.25.25M11.25 6a.25.25 0 0 0-.25.25v.5c0 .138.112.25.25.25h.5a.25.25 0 0 0 .25-.25v-.5a.25.25 0 0 0-.25-.25zM9 6.25v.5c0 .138.112.25.25.25h.5a.25.25 0 0 0 .25-.25v-.5A.25.25 0 0 0 9.75 6h-.5a.25.25 0 0 0-.25.25M7.25 6a.25.25 0 0 0-.25.25v.5c0 .138.112.25.25.25h.5A.25.25 0 0 0 8 6.75v-.5A.25.25 0 0 0 7.75 6zM5 6.25v.5c0 .138.112.25.25.25h.5A.25.25 0 0 0 6 6.75v-.5A.25.25 0 0 0 5.75 6h-.5a.25.25 0 0 0-.25.25M2.25 6a.25.25 0 0 0-.25.25v.5c0 .138.112.25.25.25h1.5A.25.25 0 0 0 4 6.75v-.5A.25.25 0 0 0 3.75 6zM2 10.25v.5c0 .138.112.25.25.25h.5a.25.25 0 0 0 .25-.25v-.5a.25.25 0 0 0-.25-.25h-.5a.25.25 0 0 0-.25.25M4.25 10a.25.25 0 0 0-.25.25v.5c0 .138.112.25.25.25h5.5a.25.25 0 0 0 .25-.25v-.5a.25.25 0 0 0-.25-.25z"/>
+                </svg>
+            </button>
+            @if (Overlay.IsLocked)
+            {
+                <button type="button" class="btn btn-link" @onclick="ToggleLock">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="#c3c7c4" class="bi bi-lock-fill" viewBox="0 0 16 16">
+                      <path d="M8 1a2 2 0 0 1 2 2v4H6V3a2 2 0 0 1 2-2m3 6V3a3 3 0 0 0-6 0v4a2 2 0 0 0-2 2v5a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2"/>
+                    </svg>
+                </button>
+            }
+            else
+            {
+                <button type="button" class="btn btn-link" @onclick="ToggleLock">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="#c3c7c4" class="bi bi-unlock-fill" viewBox="0 0 16 16">
+                        <path d="M11 1a2 2 0 0 0-2 2v4a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V9a2 2 0 0 1 2-2h5V3a3 3 0 0 1 6 0v4a.5.5 0 0 1-1 0V3a2 2 0 0 0-2-2"/>
+                    </svg>
+                </button>
+                
+            }
+            <button type="button" class="btn btn-link" @onclick="()=> OverlayHotkey.TriggerValue = false">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="#c3c7c4" class="bi bi-x-lg" viewBox="0 0 16 16">
+                  <path d="M2.146 2.854a.5.5 0 1 1 .708-.708L8 7.293l5.146-5.147a.5.5 0 0 1 .708.708L8.707 8l5.147 5.146a.5.5 0 0 1-.708.708L8 8.707l-5.146 5.147a.5.5 0 0 1-.708-.708L7.293 8z"/>
+                </svg>
+            </button>
+            
         </div>
     </div>
 
     <div class="card-body">
-        <div class="form-check form-switch">
-            <input class="form-check-input" type="checkbox" role="switch" id="flexSwitchCheckChecked1" @bind="Enabled">
-            <label class="form-check-label" for="flexSwitchCheckChecked1">Enable system</label>
+        <div class="d-flex">
+            <div class="form-check form-switch me-3">
+                <input class="form-check-input" type="checkbox" role="switch" id="flexSwitchCheckChecked1" @bind="Enabled">
+                <label class="form-check-label" for="flexSwitchCheckChecked1">Enable system</label>
+            </div>
+        
+            <div class="form-check form-switch me-3">
+                <input class="form-check-input" type="checkbox" role="switch" id="flexSwitchCheckChecked" @bind="TogglePreview">
+                <label class="form-check-label" for="flexSwitchCheckChecked">Render preview</label>
+            </div>
         </div>
         
-        <div class="form-check form-switch">
-            <input class="form-check-input" type="checkbox" role="switch" id="flexSwitchCheckChecked" @bind="TogglePreview">
-            <label class="form-check-label" for="flexSwitchCheckChecked">Render preview</label>
-        </div>
         
         <div class="input-group mb-3" style="margin-top: 10px;">
             <span class="input-group-text" id="basic-addon5">Ignore range</span>
             <input type="text" class="form-control" aria-describedby="basic-addon5" @bind="_ignoreDistance">
             <span class="input-group-text" id="basic-addon6">Click Radius</span>
             <input type="text" class="form-control" aria-describedby="basic-addon6" @bind="_rad">
+            <span class="input-group-text" id="basic-addon3">Center -X</span>
+            <input type="text" class="form-control" aria-describedby="basic-addon3" @bind="_cx">
+            <span class="input-group-text" id="basic-addon4">Center -Y</span>
+            <input type="text" class="form-control" aria-describedby="basic-addon4" @bind="_cy">
             
         </div>
         
         
         <div class="input-group mb-3">
-            <span class="input-group-text" id="basic-addon3">Center -X</span>
-            <input type="text" class="form-control" aria-describedby="basic-addon3" @bind="_cx">
-            <span class="input-group-text" id="basic-addon4">Center -Y</span>
-            <input type="text" class="form-control" aria-describedby="basic-addon4" @bind="_cy">
+            
         </div>
-
+        
+        <div class="form-check form-switch me-3">
+            <input class="form-check-input" type="checkbox" role="switch" id="flexSwitchCheckChecked11" @bind="Telegram">
+            <label class="form-check-label" for="flexSwitchCheckChecked11">Telegram</label>
+        </div>
+        @if (Telegram)
+        {
+            <div class="input-group mb-3" style="margin-top: 10px;">
+                <span class="input-group-text" id="basic-addon11">Chat ID</span>
+                <input type="text" class="form-control" aria-describedby="basic-addon11" @bind="TelegramAction.ChatId">
+                <span class="input-group-text" id="basic-addon12">Token</span>
+                <input type="text" class="form-control" aria-describedby="basic-addon12" @bind="TelegramAction.Token">
+            </div>
+        }
+        
         <br/>
         <!-- <div class="progress">
             <div class="progress-bar bg-danger" role="progressbar" style="width: @_globalPercentage%;" aria-valuenow="@_globalPercentage" aria-valuemin="0" aria-valuemax="100" id="healthProgressBar">@_globalPercentage %</div>
@@ -65,12 +117,18 @@
             </div>
         </div><br/>
         
-        <div class="form-check form-switch">
-            <input class="form-check-input" type="checkbox" role="switch" id="flexSwitchCheckChecked5" @bind="Hotkey.TriggerValue">
-            <label class="form-check-label" for="flexSwitchCheckChecked5">Start fight</label>
+        <div class="d-flex">
+            <div class="form-check form-switch me-3">
+                <input class="form-check-input" type="checkbox" role="switch" id="flexSwitchCheckChecked5" @bind="Hotkey.TriggerValue">
+                <label class="form-check-label" for="flexSwitchCheckChecked5">Start [@Hotkey.Hotkey.ToString()]</label>
+            </div>
+            
+            
+            
         </div>
         
-        <div class="d-flex">
+        
+            <div class="d-flex">
             <div class="form-check form-switch me-3">
                 <input class="form-check-input" type="checkbox" role="switch" id="flexSwitchCheckChecked6" @bind="Spoil">
                 <label class="form-check-label" for="flexSwitchCheckChecked6">Im spoil</label>
@@ -79,10 +137,15 @@
                 <input class="form-check-input" type="checkbox" role="switch" id="flexSwitchCheckChecked7" @bind="EnableCoctail">
                 <label class="form-check-label" for="flexSwitchCheckChecked7">Coctail</label>
             </div>
-            <div class="form-check form-switch">
-                <input class="form-check-input" type="checkbox" role="switch" id="flexSwitchCheckChecked8" @bind="NoPickup">
-                <label class="form-check-label" for="flexSwitchCheckChecked8">No Pickup</label>
-            </div>
+                <div class="form-check form-switch me-3">
+                    <input class="form-check-input" type="checkbox" role="switch" id="flexSwitchCheckChecked8" @bind="NoPickup">
+                    <label class="form-check-label" for="flexSwitchCheckChecked8">No Pickup</label>
+                </div>
+                <div class="form-check form-switch me-3">
+                    <input class="form-check-input" type="checkbox" role="switch" id="flexSwitchCheckChecked23" @bind="GoTown">
+                    <label class="form-check-label" for="flexSwitchCheckChecked23">Go town after die</label>
+                </div>
+                
         </div>
 
         
@@ -94,6 +157,14 @@
         </ul>
         
         
+        
+        <!-- <iframe id="vdoNinjaIframe" style="width:100%; height:600px;"></iframe>
+        <button onclick="startScreenShare()">Select Screen to Share</button> -->
+
+
+        
+        
+
         
         @if (TogglePreview)
         {
@@ -187,10 +258,44 @@
             </div>
         </div>
     </div>
-</div>
+    
+    <div class="modal fade" id="VDOMoal" tabindex="-1" aria-labelledby="VDOMoalLabel" aria-hidden="true">
+            <div class="modal-dialog">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h1 class="modal-title fs-5" id="VDOMoalLabel">Stream</h1>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body">
+                        @if (!stream)
+                        {
+                            <div class="d-grid gap-2">
+                                <button class="btn btn-success " type="button" @onclick="ToggleStream">Click to start stream </button>
+                            </div>
+                        }
+                        else
+                        {
+                            <div class="d-grid gap-2">
+                                <button class="btn btn-danger " type="button" @onclick="ToggleStream">
+                                    <span class="spinner-border spinner-border-sm" aria-hidden="true"></span>
+                                      <span role="status">Streaming...</span>
+                                </button>
+                            </div>
+                        }
+                        <a href="@VDOLink" class="btn btn-primary" style="margin-top: 15px;" role="button">Link on Stream</a>
 
+                        <!-- <a href="@VDOLink">Link on Stream</a> -->
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+</div>
+<iframe id="vdoNinjaIframe" allow="display-capture" style="display: none"></iframe>
 @code {
-    private List<string> BlackList = new List<string> { "Chest", "Ranger" };
+    private List<string> BlackList = new List<string> { "Chest", "Ranger", "Improved", "Baby", "Kookaburra" };
     private string newItem = "";
     private void AddItem()
     {
@@ -205,4 +310,18 @@
     {
         BlackList.Remove(item);
     }
+
+    private bool stream;
+    private async Task ToggleStream()
+    {
+        stream = !stream;
+        await JSRuntime.InvokeVoidAsync("toggleStream", VDOUsername, VDOPassword);
+    }
+
+    private void ToggleLock()
+    {
+        Overlay.IsLocked = !Overlay.IsLocked;
+    }
+
+    
 }

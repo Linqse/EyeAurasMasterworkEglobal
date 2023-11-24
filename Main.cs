@@ -2,12 +2,11 @@ using System.IO;
 using System.Reactive.Disposables;
 using Emgu.CV.Structure;
 using Emgu.CV;
-using Emgu.CV.CvEnum;
-using Emgu.CV.Structure;
+
 using Emgu.CV.Util;
-using System.Drawing;
 using System.Collections.Generic;
 using System.Reactive;
+using System.Text;
 using EyeAuras.OpenCVAuras.Scaffolding;
 using EyeAuras.Roxy.Shared.Actions.SendInput;
 using PoeShared.UI;
@@ -19,6 +18,7 @@ public partial class Main : WebUIComponent
     [Dependency] public ISendInputController SendInputController { get; init; }
     
     [Dependency] public IHotkeyConverter HotkeyConverter { get; init; }
+    [Dependency] public IUsernameProvider UsernameProvider { get; init; }
     public Main()
     {
     }
@@ -50,36 +50,57 @@ public partial class Main : WebUIComponent
 
     private ITextSearchTrigger IgnorTarget => AuraTree.GetAuraByPath(@".\Search\IgnorTarget").Triggers.Items
         .OfType<ITextSearchTrigger>().First();
+    private IImageSearchTrigger CharacterDead => AuraTree.GetAuraByPath(@".\Search\Dead").Triggers.Items
+        .OfType<IImageSearchTrigger>().First();
+
+    private ISendToTelegramAction TelegramAction => AuraTree.GetAuraByPath(@".\SendToTelegram").OnEnterActions.Items
+        .OfType<ISendToTelegramAction>().First();
     
 
     private IDefaultTrigger Attack =>
         AuraTree.GetAuraByPath(@".\Attack").Triggers.Items.OfType<IDefaultTrigger>().First();
+
+    private IWebUIAuraOverlay Overlay => AuraTree.Aura.Overlays.Items.OfType<IWebUIAuraOverlay>().First();
+
+    private IHotkeyIsActiveTrigger OverlayHotkey =>
+        AuraTree.Aura.Triggers.Items.OfType<IHotkeyIsActiveTrigger>().First();
 
     private void StartParam()
     {
         try
         {
             var dwm = Minimap.ActiveWindow.DwmWindowBounds;
-            AuraTree.Aura["TargetHP"] = new Rectangle(dwm.Width / 2 - 250, 0, 100, 70);
+            AuraTree.Aura["TargetHP"] = new Rectangle(dwm.Width / 2 - 150, 0, 100, 70);
             AuraTree.Aura["IgnorTarget"] = new Rectangle(dwm.Width / 2 - 50, 0, 300, 70);
+            AuraTree.Aura["Center"] = new Rectangle(dwm.Width / 2 - 150, dwm.Height /2 - 150, 300, 300);
         }
         catch
         {
             Log.Info("NO WINDOW ALO");
         }
+
+        VDOUsername = UsernameProvider.Username;
+        VDOPassword = Convert.ToBase64String(Encoding.UTF8.GetBytes("UsernameProvider.Username" + "eyesquad"));
+        VDOLink = $"https://vdo.ninja/?scene&room={VDOUsername}&password={VDOPassword}";
     }
 
     protected override async Task HandleAfterFirstRender()
     {
         Disposable.Create(() => Log.Info("Disposed")).AddTo(Anchors);
 
-        Minimap.ImageSink.Where(_ => Enabled).Subscribe(x => 
-            Task.Run(() => StartGetVal(x))).AddTo(Anchors);
-    
-        PlayerHp.ImageSink.Where(_ => Enabled).Subscribe(x => 
-            Task.Run(() => HpBar(x))).AddTo(Anchors);
-        TargetHp.ImageSink.Where(_ => Enabled).Subscribe(x => 
-            Task.Run(() => CheckTarget())).AddTo(Anchors);
+        Minimap.ImageSink
+            .Where(x => x != null && Enabled)
+            .Subscribe(x => Task.Run(() =>StartGetVal(x)))
+            .AddTo(Anchors);
+
+        PlayerHp.ImageSink
+            .Where(x => x != null && Enabled)
+            .Subscribe(x => Task.Run(() =>HpBar(x)))
+            .AddTo(Anchors);
+
+        TargetHp.ResultStream.Where(_ => Enabled).Subscribe(x => 
+                Task.Run(() =>CheckTarget()))
+            .AddTo(Anchors);
         
         /*TargetHp.WhenAnyValue(x => x.IsActive)
             .Where(x => x.HasValue && x.Value && Hotkey.IsActive == true)
@@ -106,11 +127,17 @@ public partial class Main : WebUIComponent
             .Where(x => x.HasValue && !x.Value && EnableCoctail && Hotkey.IsActive == true)
             .Subscribe(_ => EatCoctail())
             .AddTo(Anchors);
+        CharacterDead.WhenAnyValue(x => x.IsActive)
+            .Where(x => x.HasValue && x.Value && Hotkey.IsActive == true)
+            .Subscribe(_ => WhenImDead())
+            .AddTo(Anchors);
+            
 
         this.WhenAnyValue(x => x.Target)
             .Where(targetValue => targetValue && Hotkey.IsActive == true)
             .Subscribe(_ => Fight())
             .AddTo(Anchors);
+        
         
 
         StartParam();
@@ -124,6 +151,12 @@ public partial class Main : WebUIComponent
     private string Status { get; set; }
     private bool EnableCoctail { get; set; }
     private bool NoPickup { get; set; }
+    private bool Telegram { get; set; }
+    private bool GoTown { get; set; }
+
+    private string VDOLink { get; set; } 
+    private string VDOUsername { get; set; }
+    private string VDOPassword { get; set; }
     
     private Point MouseClickDirect;
     private bool _target;
@@ -149,7 +182,23 @@ public partial class Main : WebUIComponent
         }
     }*/
 
-    
+    private async Task WhenImDead()
+    {
+        if (Telegram && TelegramAction.Token != null && TelegramAction.ChatId != null)
+        {
+            await Task.Run(() =>TelegramAction.Execute());
+        }
+
+        Hotkey.TriggerValue = false;
+        Enabled = false;
+
+        if (GoTown && CharacterDead.BoundsWindow.HasValue)
+        {
+            var rect = CharacterDead.BoundsWindow.Value;
+            var point = new Point((int)(rect.X + rect.Width / 2), (int)(rect.Y + rect.Height / 2));
+            await SendKey("MouseLeft", point);
+        }
+    }
 
     
     private async Task Fight()
